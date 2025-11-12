@@ -1,4 +1,4 @@
-import { v2 } from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import fs from "fs"
 
     cloudinary.config({ 
@@ -14,11 +14,11 @@ import fs from "fs"
             const res = await cloudinary.uploader.upload(localFilePath, {
                 resource_type: "auto"
             })
-            fs.unlink(localFilePath);
+            fs.unlinkSync(localFilePath);
             return res;
 
         } catch (error) {
-            fs.unlink(localFilePath);
+            fs.unlinkSync(localFilePath);
             return null;
         }
     }
