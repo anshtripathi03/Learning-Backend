@@ -3,6 +3,7 @@ import {
   registerUser,
   logoutUser,
   loginUser,
+  getNewAccessTokens
 } from "../controllers/users.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -22,5 +23,6 @@ router.post(
 router.route("/login").post(upload.none(), loginUser)
 router.route("/logout").post(verifyJWT,  logoutUser)
 
+router.route("/getAccessToken").post(getNewAccessTokens)
 
 export default router;

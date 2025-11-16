@@ -3,6 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponce } from "../utils/ApiResponce.js";
 import { User } from "../models/User.model.js";
 import { UploadOnCloudinary } from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessRefreshtokens = async (userId) => {
   try {
@@ -155,4 +157,62 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponce(200, {}, "User logged out successfully"));
 });
 
-export { registerUser, loginUser, logoutUser };
+const getNewAccessTokens = asyncHandler(async(req, res) => {
+
+  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if(!incomingRefreshToken){
+    throw new ApiError(401,"could not find the refreshtokens");
+  }
+
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    )
+
+    console.log(decodedToken);
+
+    const user = await User.findById(decodedToken?.id);
+
+    if(!user){
+      throw new ApiError(401,"user not found");
+    }
+
+    if(incomingRefreshToken !== user?.refreshToken){
+      throw new ApiError(401,"unauthorised request");
+    }
+
+    const options = {
+      httpOnly: true,
+      secure: true
+    }
+
+    const {accessToken, refreshToken} = await generateAccessRefreshtokens(user.id);
+
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponce(
+        200,
+        {
+          accessToken,
+          refreshToken
+        },
+        "Access tokens are refreshed"
+      )
+    )
+  } catch (error) {
+    console.log("JWT error",error);
+    throw new ApiError(401, "unauthorised request");
+  }
+})
+
+export { 
+  registerUser,
+  loginUser,
+  logoutUser,
+  getNewAccessTokens
+ };
